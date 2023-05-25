@@ -40,7 +40,7 @@ export const createHeader = (parent) => {
         textContent: 'Добавить категорию',
     });
 
-    // Добавили элементs headerLogoLink, headerTitle, headerBtn в headerContainer 
+    // Добавили элементы headerLogoLink, headerTitle, headerBtn в headerContainer 
     headerContainer.append(headerLogoLink, headerTitle, headerBtn);
 
     // Функция updateHeaderTitle которая принимает в себя какой-то переданный текст 'title' и перезаписывает (меняет) textContent у элемента headerTitle
