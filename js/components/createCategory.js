@@ -1,4 +1,5 @@
 import { createElement } from "../helper/createElement.js"
+import { declOfNum } from "../helper/declOfNum.js";
 
 // Функция createCategory которая принимает в себя элемент app
 export const createCategory = (app) => {
@@ -68,7 +69,9 @@ export const createCategory = (app) => {
         // Создаём элемент span который входит в состав элемента li (карточки)
         const itemSpanPairs = createElement ('span', {
             className: 'category__pairs',
-            textContent: `${data.length} пар`,
+            // Вызываем функцию declOfNum в которую передаем количество пар слов и массив с возможными склонениями слова "пара"
+            // Она соответственно заполняет в верном склонении относительно числительного - количество пар слов в категории с карточками
+            textContent: declOfNum(data.length, ['пара', 'пары', 'пар']),
         });
 
         // Добавляем в button title её составные элементы span
@@ -101,5 +104,5 @@ export const createCategory = (app) => {
     }
 
     // Возвращаем из функции createCategory, функции mount, unmount и categoryList (чтобы потом на него повесить обработчик событий)
-    return { mount, unmount, categoryList }
+    return { mount, unmount, categoryList };
 }

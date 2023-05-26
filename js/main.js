@@ -46,7 +46,7 @@ const initApp = async () => {
         }
 
         // Записываем (сбрасываем предыдущее) в элемент-заголовок HeaderTitle значение-текст 'Категории'
-        headerObj.updateHeaderTitle('Категории')
+        headerObj.updateHeaderTitle('Категории');
 
         // Вызываем функцию mount для создания блока с карточками и передаем туда данные categories
         categoryObj.mount(categories);
@@ -63,7 +63,7 @@ const initApp = async () => {
         // Вызываем функцию unmount чтобы удалить блок с карточками
         categoryObj.unmount();
         // Записываем (сбрасываем предыдущее) в элемент-заголовок HeaderTitle значение-текст 'Новая категория'
-        headerObj.updateHeaderTitle('Новая категория')
+        headerObj.updateHeaderTitle('Новая категория');
     })
 };
 

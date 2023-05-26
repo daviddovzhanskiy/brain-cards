@@ -50,8 +50,6 @@ export const createHeader = (parent) => {
 
     // Из функции возвращаются элемент с логотипом и элемент с кнопкой 'Добавить категорию', чтобы потом отдельно при импорте этой функции повесить какой-то функционал на эти элементы в другом месте (не прописывать здесь)
     // Также из функции createHeader возвращается функция updateHeaderTitle
-    return {
-        headerLogoLink, headerBtn, updateHeaderTitle
-    };
+    return { headerLogoLink, headerBtn, updateHeaderTitle };
 
 };
