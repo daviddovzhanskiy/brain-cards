@@ -1,7 +1,8 @@
 import { createCategory } from "./components/createCategory.js";
+import { createEditCategory } from "./components/createEditCategory.js";
 import { createHeader } from "./components/createHeader.js";
 import { createElement } from "./helper/createElement.js";
-import { fetchCategories } from "./service/api.service.js";
+import { fetchCards, fetchCategories } from "./service/api.service.js";
 
 // Главная функция initApp
 const initApp = async () => {
@@ -20,18 +21,32 @@ const initApp = async () => {
     // И записываем в константу categoryObj всё что возвращается из функции createCategory
     const categoryObj = createCategory(app);
 
-    // Записываем в константу categories - выполненный результат функции fetchCategories
-    // Используем await чтобы дождаться ответа от сервера и получить ответ уже в виде обработанных данных из функции fetchCategories
-    // Т.е. мы получаем массив объектов (каждый объект это категория)
-    const categories = await fetchCategories();
+    
+    // Вызываем функцию createEditCategory и передаем в неё элемент app
+    // И записываем в константу editCategoryObj всё что возвращается из функции createEditCategory
+    const editCategoryObj = createEditCategory(app);
 
-    // Функция returnIndex для сброса названия заголовка в дефолтное
+    // Функция которая берет все categoryObj, editCategoryObj и выполняет функцию unmount (очистки)
+    const allSectionUnmount = () => {
+        // Создаем массив из этих объектов, перебераем его через forEach и у каждой секции (obj) выполняет функцию unmount (которая написано внутри obj, т.е. каждой функции по которой проходится forEach)
+        [categoryObj, editCategoryObj].forEach(obj => obj.unmount());
+        // categoryObj.unmount();
+        // editCategoryObj.unmount();
+    };
+
+    // Функция renderIndex для сброса названия заголовка в дефолтное
     // И запуска функции создания блока с карточками
-    const returnIndex = async (e) => {
+    const renderIndex = async (e) => {
         // Сбрасываем чтобы по клику ничего не происходило (перезагрузка страницы и тд)
         // В асинхронной функции будет ошибка, что нет такого метода preventDefault
         // Для этого после "e" ставим "?", чтобы привент дефолт вызывался только тогда когда он есть
         e?.preventDefault();
+        // Выполняем функцию allSectionUnmount - то есть очищаем секции перед отображением категорий
+        allSectionUnmount();
+        // Записываем в константу categories - выполненный результат функции fetchCategories
+        // Используем await чтобы дождаться ответа от сервера и получить ответ уже в виде обработанных данных из функции fetchCategories
+        // Т.е. мы получаем массив объектов (каждый объект это категория)
+        const categories = await fetchCategories();
         // Если при получении категорий из сервера произошла ошибка
         if(categories.error) {
             // Создаём элемент p и добавляем в него текст-оповещение об ошибке
@@ -52,19 +67,54 @@ const initApp = async () => {
         categoryObj.mount(categories);
     };
 
-    // Вызываем функцию returnIndex, чтобы один раз эотт вызов произошел в начале самостоятельно
-    returnIndex();
+    // Вызываем функцию renderIndex, чтобы один раз эотт вызов произошел в начале самостоятельно
+    renderIndex();
 
-    // На логотип добавляем событие по клику, которое вызывает функцию returnIndex
-    headerObj.headerLogoLink.addEventListener('click', returnIndex);
+    // На логотип добавляем событие по клику, которое вызывает функцию renderIndex
+    headerObj.headerLogoLink.addEventListener('click', renderIndex);
 
     // На кнопку 'Добавить категорию' добавляем событие по клику
     headerObj.headerBtn.addEventListener('click', () => {
-        // Вызываем функцию unmount чтобы удалить блок с карточками
-        categoryObj.unmount();
+        // Вызываем функцию allSectionUnmount чтобы очистить сенкцию с выводом карточек
+        allSectionUnmount();
         // Записываем (сбрасываем предыдущее) в элемент-заголовок HeaderTitle значение-текст 'Новая категория'
         headerObj.updateHeaderTitle('Новая категория');
-    })
+        // Вызываем функцию mount из константы editCategoryObj в которой лежит всё что возвращено из функции createEditCategory
+        // Она будет монтировать нашу таблицу с добавлением категорий
+        editCategoryObj.mount();
+    });
+
+    // Вешаем обработчик события по клику на categoryList (список с карточками категорий)
+    // И делаем выборку по event target'y 
+    // Функция должна быть асинхронная так как бы в ней будем использовать await для получчения данных от сервера (данные из категории - пары слов в ней)
+    categoryObj.categoryList.addEventListener('click', async (e) => {
+        // Получаем event target и помещаем его в константу таргет
+        const target = e.target;
+        // Выясняем на какую карточку произошел клик
+        // Используем метод closest и передаем туда класс нашей карточки. target это тот элемент на который мы кликнули, closest начинаент поиск указанного селектора с того элемента на который мы кликнули, а потом начинает подниматься наверх пока этот элемент не встретит и как встретит завернёт его в переменную categoryItem, если не встретит - вернёт null
+        const categoryItem = target.closest('.category__item');
+
+        // Проверка на то есть ли у нас categoryItem, если его нет, дальше ничего не возвращаем, останавливаем работу
+        // if (!categoryItem) {
+        //     return;
+        // }
+
+        // Если клик произошел по значку редактировать карточку 
+        if (target.closest('.category__edit')) {
+            // Берём данные этой категории (пары слов занесенные в эту категорию)
+            // Записываем в константу dataCards - выполненный результат функции fetchCards
+            // В функцию fetchCards передаем id категории по которой кликнули для редактирования с помощью обращения к константе categoryItem которая по сути является тем на что кликнули и представляет из себя li элемент у которого есть дата атрибут data-id
+            // Используем await именно, чтобы должаться нормального ответа с сервера, чтобы получить не промис, а объект
+            const dataCards = await fetchCards(categoryItem.dataset.id);
+            // Выполняем для всех секции функцию очистики allSectionUnmount
+            allSectionUnmount();
+            // Меняем заголовок у header на редактирование
+            headerObj.updateHeaderTitle('Редактирование');
+            // Обращаемся к editCategory и методу mount и туда внутрь передаем dataCards, чтобы вывести данные с сервера о парах слов составленных в этой категории
+            editCategoryObj.mount(dataCards);
+            return;
+        };
+    });
 };
 
 // Вызываем главную функцию initApp для запуска приложения
