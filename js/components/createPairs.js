@@ -1,4 +1,5 @@
 import { createElement } from "../helper/createElement.js"
+import { shuffleArray } from "../helper/shuffleArray.js";
 import { showAlert } from "./showAlert.js";
 
 // Функция createPairs которая принимает в себя элемент app в который будет рендрится все что мы будем в этой функции создавать, а конкретнее пары Pairs
@@ -111,8 +112,11 @@ export const createPairs = (app) => {
     const mount = (data) => {
         // Вставляем секцию pairs в элемент app в котором нужно эту секцию отобразить
         app.append(pairs);
-        // Вызываем функцию cardController для переворачивания карточек и передаем в неё data.pairs из базы данных (именно список этих пар, смысла передавать весь объект пришедший из БД нет, можно сразу указать что нам нужны только pairs)
-        cardController(data.pairs);
+        // Вызываем функцию shuffleArray для перемешивания элементов массива и передаем в неё наш массив с данными (пары слов) из БД - data.pairs
+        // Записываем новый массив в константу newData
+        const newData = shuffleArray(data.pairs);
+        // Вызываем функцию cardController для переворачивания карточек и передаем в неё новый перемешанный массив newData который был переделан из data.pairs (то есть пар слов, полученных из бд)
+        cardController(newData);
     };
 
     // Функция для очистки секции pairs
