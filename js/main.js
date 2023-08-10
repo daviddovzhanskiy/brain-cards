@@ -2,8 +2,9 @@ import { createCategory } from "./components/createCategory.js";
 import { createEditCategory } from "./components/createEditCategory.js";
 import { createHeader } from "./components/createHeader.js";
 import { createPairs } from "./components/createPairs.js";
+import { showAlert } from "./components/showAlert.js";
 import { createElement } from "./helper/createElement.js";
-import { fetchCards, fetchCategories } from "./service/api.service.js";
+import { fetchCards, fetchCategories, fetchCreateCategory, fetchDeleteCategory, fetchEditCategory } from "./service/api.service.js";
 
 // Главная функция initApp
 const initApp = async () => {
@@ -38,6 +39,67 @@ const initApp = async () => {
         // categoryObj.unmount();
         // editCategoryObj.unmount();
     };
+
+    // Функция postHandler для записи новых данных (пар слов) из новой созданной категории
+    const postHandler = async () => {
+        // Получаем данные из функции editCategoryObj и обращаемся к функции ParseData из которой получаем объект с массивом данных (пар слов)
+        const data = editCategoryObj.parseData();
+        // Записываем в переменную dataCategories полученные данные из сервера с помощью функции fetchCreateCategory, которая после сохранения новой категории, обратиться к серверу и получит от туда уже обновленные данные включая новую категорию
+        const dataCategories = await fetchCreateCategory(data);
+        
+        // Если в dataCategory есть ошибка - показываем сообщение об ошибке
+        if (dataCategories.error) {
+            showAlert(dataCategories.error.message);
+            return;
+        }
+
+        // Вызываем alert о том, что новая категория добавлена и данные отправлены на сервер
+        showAlert(`Новая категория ${data.title} была добавлена`);
+        // Вызываем функцию allSectionUnmount чтобы очистить секции перед отображением категорий уже включая новую
+        allSectionUnmount();
+        // Меняем заголовок у header на надпись "категории" для общего обозначения всех представленных категорий в секции
+        headerObj.updateHeaderTitle("Категории");
+        // Вызываем функцию mount для создания блока с карточками и передаем туда данные с сервера записанные в переменную dataCategories
+        categoryObj.mount(dataCategories);   
+    }
+
+    // Функция patchHandler для обновления данных (пар слов) редактируемой категории со словами
+    const patchHandler = async () => {
+        // Получаем данные из функции editCategoryObj и обращаемся к функции ParseData из которой получаем объект с массивом данных (пар слов)
+        const data = editCategoryObj.parseData();
+        // Записываем в переменную dataCategories полученные данные из сервера с помощью функции fetchEditCategory, которая после редактирования какой-либо категории, обратиться к серверу и получит от туда уже обновленные данные включая обновленную отредактированную категорию с её наполнением (парами слов и так далее)
+        // По мимо data в эту функцию мы также передаем id кнопки "Сохранить"
+        const dataCategories = await fetchEditCategory(editCategoryObj.btnSave.dataset.id, data);
+        // Если в dataCategory есть ошибка - показываем сообщение об ошибке
+        if (dataCategories.error) {
+            showAlert(dataCategories.error.message);
+            return;
+        }
+
+        // Вызываем alert о том, что текущая категория была изменена (отредактирована) и обновленные данные отправлены на сервер
+        showAlert(`Категория ${data.title} обновлена`);
+        // Вызываем функцию allSectionUnmount чтобы очистить секции перед отображением категорий уже включая текущую со всеми изменениями
+        allSectionUnmount();
+        // Меняем заголовок у header на надпись "категории" для общего обозначения всех представленных категорий в секции
+        headerObj.updateHeaderTitle("Категории");
+        // Вызываем функцию mount для создания блока с карточками и передаем туда данные с сервера записанные в переменную dataCategories
+        categoryObj.mount(dataCategories);   
+    }
+
+    // Функция cancelChange которая возвращает пользователя на главную страницу и не применяет никакие внесенные изменения (которые до этого не отправились на сервер)
+    const cancelChange = () => {
+        // Запрос пользователю. Уверен ли он, что хочет отменить ещё несохраненные внесённые им изменения и вернуться на главную страницу?
+        if (confirm('Вы хотите не сохранять изменения и вернуться на главную страницу?')) {
+            // Если пользователь ответил что Да
+            // Вызываем функцию renderIndex(); которая вернёт его на главную страницу
+            renderIndex();
+            // Вызываем alert (оповещение) о том что пользователь успешно отменил несохраненные до этого изменения и вернулся на главную страницу
+            showAlert('Вы вернулись на главную страницу!');
+        }
+
+        return;
+    }
+
 
     // Функция renderIndex для сброса названия заголовка в дефолтное
     // И запуска функции создания блока с карточками
@@ -89,6 +151,14 @@ const initApp = async () => {
         // Вызываем функцию mount из константы editCategoryObj в которой лежит всё что возвращено из функции createEditCategory
         // Она будет монтировать нашу таблицу с добавлением категорий
         editCategoryObj.mount();
+        // Вешаем обработчик событий на кнопку "Сохранить"
+        // Когда мы на неё нажимаем вызывается функция postHandler для сохранения новых данных (пар слов) из созданной новой категории
+        editCategoryObj.btnSave.addEventListener('click', postHandler);
+        // Удаляем обработчик события с кнопки сохранить, который мог быть установлен при редактировании категории, тогда у нас будет работать только обработчик события на сохранение данных, а не обновление
+        editCategoryObj.btnSave.removeEventListener('click', patchHandler);
+        // Вешаем обработчик событий на кнопку "Отмена"
+        // Когда мы на неё нажимаем вызывается функция cancelChange которая отменит внесенные и несохраненные до этого пользователем изменения и перенаправит его на главную страницу
+        editCategoryObj.btnCancel.addEventListener('click', cancelChange);
     });
 
     // Вешаем обработчик события по клику на categoryList (список с карточками категорий)
@@ -114,12 +184,42 @@ const initApp = async () => {
             headerObj.updateHeaderTitle('Редактирование');
             // Обращаемся к editCategory и методу mount и туда внутрь передаем dataCards, чтобы вывести данные с сервера о парах слов составленных в этой категории
             editCategoryObj.mount(dataCards);
+            // Вешаем обработчик событий на кнопку "Сохранить"
+            // Когда мы на неё нажимаем вызывается функция patchHandler (для обновления данных в редактируемой категории)
+            editCategoryObj.btnSave.addEventListener('click', patchHandler);
+            // Удаляем обработчик события с кнопки сохранить, который мог быть установлен при создании категории, тогда у нас будет работать только обработчик события на обновление данных, а не сохранение
+            editCategoryObj.btnSave.removeEventListener('click', postHandler);
+            // Вешаем обработчик событий на кнопку "Отмена"
+            // Когда мы на неё нажимаем вызывается функция cancelChange которая отменит внесенные и несохраненные до этого пользователем изменения и перенаправит его на главную страницу
+            editCategoryObj.btnCancel.addEventListener('click', cancelChange);
+
             return;
         };
 
         // Если клик произошел по значку удалить карточку 
         if (target.closest('.category__del')) {
-            console.log('Удалить');
+            // Запрос пользователю, уверен ли он что хочет удалить выбранную категорию?
+            if (confirm('Вы уверены что хотите удалить категорию?')) {
+                // Если пользователь ответил что Да
+                // Вызываем функцию FetchDeleteCategory для удаления категории и передаем в неё id категории которую нужно удалить
+                // Результат помещаем в переменную result
+                const result = fetchDeleteCategory(categoryItem.dataset.id);
+           
+                // Если в result прилетел error, выводим alert с этой ошибкой
+                if (result.error) {
+                    showAlert(result.error.message);
+                    // Пропишем return чтобы не записывать else
+                    return;
+                }
+                
+                // Если ошибки никакой вызвано не было и всё успешно удалилось, вызываем alert о том что удаление произошло успешно
+                showAlert('Категория удалена!');
+                // Так как при успешном выполнении функции мы получим пустой массив
+                // Удалим и со страницы categoryItem, т.е. тело карточки категории
+                categoryItem.remove()
+            }
+
+            // Заканчиваем выполнение
             return;
         };
 
