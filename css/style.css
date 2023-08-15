@@ -236,7 +236,7 @@ p {
 .card__return {
   position: absolute;
   top: 0;
-  left: 0;
+  left: 35px;
   display: block;
   width: 40px;
   height: 40px;
