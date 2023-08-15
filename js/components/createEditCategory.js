@@ -39,12 +39,12 @@ export const createEditCategory = (app) => {
     // Создаём элементы - заголовки в строке таблицы - 'th'
     const tableHeadCellMain = createElement('th', {
         className: 'table__cell',
-        textContent: 'main',
+        textContent: 'Слово для изучения',
     });
 
     const tableHeadCellSecond = createElement('th', {
         className: 'table__cell',
-        textContent: 'second',
+        textContent: 'Перевод заданного слова',
     });
 
     const tableHeadCellEmpty = createElement('th', {
